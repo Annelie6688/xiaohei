@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小黑 - 傲娇猫咪聊天</title>
+    <style>
+        /* ========================================
+           基础样式重置与全局设置
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        #content-wrapper {
+            display: flex;
+            flex-direction: row;
+        }
+
+        /* 猫咪区域 */
+        #cat-area {
+            width: 280px;
+            min-height: 300px;
+            background: linear-gradient(180deg, #ffecd2 0%, #fcb69f 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.5s ease;
+            overflow: hidden;
+        }
+
+        .mood-happy { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%) !important; }
+        .mood-angry { background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%) !important; }
+        .mood-sad { background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%) !important; }
+        .mood-content { background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%) !important; }
+        .mood-default { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important; }
+
+        #cat-emoji {
+            font-size: 100px;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+            user-select: none;
+            z-index: 2;
+            position: relative;
+        }
+
+        #cat-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            z-index: 2;
+            position: relative;
+        }
+
+        #cat-status {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            min-height: 40px;
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+            z-index: 2;
+            position: relative;
+        }
+
+        #mood-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            z-index: 2;
+        }
+
+        #effects-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
+            border-radius: 50%;
+            animation: starFall 2s linear forwards;
+            box-shadow: 0 0 4px white;
+        }
+
+        @keyframes starFall {
+            0% { transform: translateY(-10px) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.8; }
+            100% { transform: translateY(200px) translateX(20px); opacity: 0; }
+        }
+
+        .raindrop {
+            position: absolute;
+            width: 2px;
+            height: 15px;
+            background: rgba(161, 196, 253, 0.7);
+            animation: rainFall 1.5s linear forwards;
+        }
+
+        @keyframes rainFall {
+            0% { transform: translateY(-10px) translateX(0); opacity: 0.5; }
+            100% { transform: translateY(200px) translateX(10px); opacity: 0; }
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 12px;
+            animation: heartFloat 2s ease-out forwards;
+            opacity: 0.7;
+        }
+
+        @keyframes heartFloat {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+        }
+
+        #chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 450px;
+        }
+
+        #chat-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        #chat-header h2 {
+            font-size: 16px;
+            color: #333;
+        }
+
+        #chat-area {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f5f5f5;
+            max-height: 350px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.user .message-content {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.cat {
+            text-align: left;
+        }
+
+        .message.cat .message-content {
+            display: inline-block;
+            background: #fff;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message.thinking .message-content {
+            background: #fff;
+            color: #999;
+            font-style: italic;
+        }
+
+        .message.interaction {
+            text-align: center;
+            margin: 5px 0;
+        }
+
+        .message.interaction .message-content {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #888;
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-style: italic;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message-sender {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        #controls {
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #eee;
+        }
+
+        #input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #message-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        #send-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        #send-btn:active {
+            transform: scale(0.95);
+        }
+
+        #action-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .action-btn {
+            padding: 12px 8px;
+            background: #fff;
+            border: 2px solid #fcb69f;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #e17055;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .action-btn:hover {
+            background: #fcb69f;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(252, 182, 159, 0.4);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn .emoji {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            #container { border-radius: 15px; }
+            #content-wrapper { flex-direction: column; }
+            #cat-area { width: 100%; min-height: 200px; padding: 20px; }
+            #cat-emoji { font-size: 80px; }
+            #cat-name { font-size: 20px; }
+            #chat-section { min-height: 350px; }
+            #chat-area { max-height: 250px; }
+            .message-content { max-width: 90%; padding: 10px 14px; font-size: 14px; }
+            #controls { padding: 15px; }
+            #input-area { flex-direction: column; }
+            #message-input { width: 100%; }
+            #send-btn { width: 100%; }
+            #action-buttons { grid-template-columns: repeat(2, 1fr); }
+            .action-btn { padding: 10px 5px; font-size: 13px; }
+        }
+
+        @media (max-width: 400px) {
+            #cat-emoji { font-size: 60px; }
+            .action-btn { padding: 8px 4px; font-size: 12px; }
+        }
+
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .heart-beat { animation: heartBeat 0.5s ease; }
+        @keyframes shake {
+            0%,100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        .shake { animation: shake 0.5s ease; }
+        @keyframes purr {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .purr { animation: purr 0.3s ease infinite; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="content-wrapper">
+            <div id="cat-area" onclick="catAreaClick()">
+                <div id="mood-indicator">😼</div>
+                <div id="cat-emoji">🐱</div>
+                <div id="cat-name">小黑</div>
+                <div id="cat-status">傲娇中...不要随便碰我！</div>
+                <div id="effects-layer"></div>
+            </div>
+            <div id="chat-section">
+                <div id="chat-header">
+                    <h2>💬 与小黑的对话</h2>
+                </div>
+                <div id="chat-area">
+                    <div class="message cat">
+                        <div class="message-sender">小黑</div>
+                        <div class="message-content">哼，又来打扰本喵了？有什么事快说！</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="controls">
+            <div id="input-area">
+                <input type="text" id="message-input" placeholder="和小黑说点什么..." onkeypress="handleKeyPress(event)">
+                <button id="send-btn" onclick="sendMessage()">发送</button>
+            </div>
+            <div id="action-buttons">
+                <button class="action-btn" onclick="interact('pet')"><span class="emoji">✋</span><span>摸一摸</span></button>
+                <button class="action-btn" onclick="interact('hug')"><span class="emoji">🤗</span><span>抱一抱</span></button>
+                <button class="action-btn" onclick="interact('play')"><span class="emoji">🎣</span><span>逗猫棒</span></button>
+                <button class="action-btn" onclick="interact('feed')"><span class="emoji">🍣</span><span>投喂小零食</span></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // 配置与数据
+        // ========================================
+        const MOOD_SYSTEM = {
+            happy: { name: '开心', bgClass: 'mood-happy', emoji: '😸', indicator: '❤️', effects: 'stars', statuses: ['开心地打滚~', '呼噜呼噜~', '尾巴翘高高', '蹭蹭你'] },
+            angry: { name: '生气', bgClass: 'mood-angry', emoji: '😾', indicator: '💢', effects: null, statuses: ['生气气！', '不理你了！', '背对着你', '尾巴炸毛'] },
+            sad: { name: '难过', bgClass: 'mood-sad', emoji: '😿', indicator: '💧', effects: 'rain', statuses: ['委屈巴巴...', '独自发呆...', '缩成一团', '眼泪汪汪'] },
+            content: { name: '满足', bgClass: 'mood-content', emoji: '😻', indicator: '🌟', effects: 'hearts', statuses: ['满足地舔爪', '舒服地眯眼', '在你身边打盹', '轻轻呼噜'] },
+            default: { name: '傲娇', bgClass: 'mood-default', emoji: '🐱', indicator: '😼', effects: null, statuses: ['傲娇中...', '假装不在意', '偷偷看你', '尾巴甩来甩去'] }
+        };
+
+        const INTERACTION_RESPONSES = {
+            pet: { actionText: '你摸一摸了小黑', responses: ['...手拿开！（但没躲开）', '哼！就让你摸一下...', '喵呜~（舒服地眯眼）', '...勉为其难让你摸三秒'], mood: 'content', emoji: '😸' },
+            hug: { actionText: '你抱一抱了小黑', responses: ['快放开！...（小声）也不是不行', '人类真是麻烦...（往怀里蹭了蹭）', '...体温，还挺舒服的', '只准抱一会儿！（把脸埋起来）'], mood: 'happy', emoji: '😽' },
+            play: { actionText: '你用逗猫棒逗小黑', responses: ['幼稚！...（忍不住扑上去）', '哼，本大王才不是想玩呢！', '哈！抓到...等等，我什么都没做！', '（玩疯了）再来！'], mood: 'happy', emoji: '😹' },
+            feed: { actionText: '你投喂了小零食给小黑', responses: ['算、算你有点良心！（叼走）', '哼，看在你这么有诚意的份上', '这个味道，勉强合格吧', '下次要准备更好的，懂吗？'], mood: 'content', emoji: '😋' }
+        };
+
+        let currentMood = 'default';
+        let effectInterval = null;
+
+        const chatArea = document.getElementById('chat-area');
+        const messageInput = document.getElementById('message-input');
+        const catEmoji = document.getElementById('cat-emoji');
+        const catStatus = document.getElementById('cat-status');
+        const catAreaEl = document.getElementById('cat-area');
+        const moodIndicator = document.getElementById('mood-indicator');
+        const effectsLayer = document.getElementById('effects-layer');
+
+        // ========================================
+        // 心情系统
+        // ========================================
+        function changeMood(newMood) {
+            if (!MOOD_SYSTEM[newMood]) return;
+            Object.values(MOOD_SYSTEM).forEach(mood => catAreaEl.classList.remove(mood.bgClass));
+            catAreaEl.classList.add(MOOD_SYSTEM[newMood].bgClass);
+            moodIndicator.textContent = MOOD_SYSTEM[newMood].indicator;
+            moodIndicator.classList.add('heart-beat');
+            setTimeout(() => moodIndicator.classList.remove('heart-beat'), 500);
+            catEmoji.textContent = MOOD_SYSTEM[newMood].emoji;
+            currentMood = newMood;
+            clearEffects();
+            if (MOOD_SYSTEM[newMood].effects) startEffects(MOOD_SYSTEM[newMood].effects);
+            updateCatStatus(getRandomItem(MOOD_SYSTEM[newMood].statuses));
+        }
+
+        function startEffects(effectType) {
+            if (effectInterval) clearInterval(effectInterval);
+            if (effectType === 'stars') effectInterval = setInterval(createStar, 200);
+            else if (effectType === 'rain') effectInterval = setInterval(createRaindrop, 150);
+            else if (effectType === 'hearts') effectInterval = setInterval(createHeart, 300);
+        }
+
+        function clearEffects() {
+            if (effectInterval) clearInterval(effectInterval);
+            effectInterval = null;
+            effectsLayer.innerHTML = '';
+        }
+
+        function createStar() {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.animationDuration = `${1.5 + Math.random()}s`;
+            star.style.opacity = 0.3 + Math.random() * 0.7;
+            effectsLayer.appendChild(star);
+            setTimeout(() => star.remove(), 2500);
+        }
+
+        function createRaindrop() {
+            const raindrop = document.createElement('div');
+            raindrop.className = 'raindrop';
+            raindrop.style.left = `${Math.random() * 100}%`;
+            raindrop.style.animationDuration = `${1 + Math.random()}s`;
+            effectsLayer.appendChild(raindrop);
+            setTimeout(() => raindrop.remove(), 1500);
+        }
+
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.className = 'heart';
+            heart.textContent = '❤️';
+            heart.style.left = `${20 + Math.random() * 60}%`;
+            heart.style.animationDuration = `${1.5 + Math.random()}s`;
+            effectsLayer.appendChild(heart);
+            setTimeout(() => heart.remove(), 2000);
+        }
+
+        // ========================================
+        // 互动
+        // ========================================
+        function interact(type) {
+            if (!INTERACTION_RESPONSES[type]) return;
+            addInteractionMessage(INTERACTION_RESPONSES[type].actionText);
+            changeMood(INTERACTION_RESPONSES[type].mood);
+            setTimeout(() => {
+                const response = getRandomItem(INTERACTION_RESPONSES[type].responses);
+                addMessage(response, 'cat');
+            }, 500);
+            setTimeout(() => { if (currentMood !== 'default') changeMood('default'); }, 3000);
+        }
+
+        function addInteractionMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message interaction';
+            const content = document.createElement('div');
+            content.className = 'message-content';
+            content.textContent = text;
+            div.appendChild(content);
+            chatArea.appendChild(div);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function catAreaClick() {
+            const reactions = [
+                { text: '干嘛戳本喵！', mood: 'angry' },
+                { text: '喵？想挨揍吗？', mood: 'angry' },
+                { text: '（被吓到炸毛）', mood: 'sad' },
+                { text: '哼！不理你了！', mood: 'angry' }
+            ];
+            const reaction = getRandomItem(reactions);
+            addInteractionMessage('你戳了戳小黑');
+            setTimeout(() => {
+                addMessage(reaction.text, 'cat');
+                changeMood(reaction.mood);
+            }, 500);
+            setTimeout(() => changeMood('default'), 2000);
+        }
+
+        // ========================================
+        // 对话系统（调用后端 API）
+        // ========================================
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            messageInput.value = '';
+            updateCatStatus('思考中...');
+            changeMood('default');
+            const thinkingMsg = addMessage('小黑正在思考...', 'cat', true);
+
+            try {
+                // 这里填写你的后端 API 地址（注意替换）
+                const apiUrl = 'https://xiaohei-api.vercel.app/api/chat';
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, user_id: 'user_' + Date.now() })
+                });
+                const data = await response.json();
+                thinkingMsg.remove();
+                if (data.success) {
+                    addMessage(data.reply, 'cat');
+                    determineMoodFromResponse(data.reply);
+                } else {
+                    addMessage('喵...好像出错了: ' + (data.error || '未知错误'), 'cat');
+                    changeMood('sad');
+                }
+            } catch (error) {
+                thinkingMsg.remove();
+                addMessage('喵...网络好像不通，请稍后再试！', 'cat');
+                changeMood('sad');
+                console.error('请求失败:', error);
+            }
+        }
+
+        function determineMoodFromResponse(response) {
+            const lower = response.toLowerCase();
+            if (lower.includes('开心') || lower.includes('喜欢') || lower.includes('可爱') || lower.includes('舒服')) changeMood('happy');
+            else if (lower.includes('难过') || lower.includes('委屈') || lower.includes('伤心')) changeMood('sad');
+            else if (lower.includes('生气') || lower.includes('讨厌') || lower.includes('不理')) changeMood('angry');
+            else if (lower.includes('满足') || lower.includes('谢谢') || lower.includes('晚安')) changeMood('content');
+            else changeMood('default');
+            setTimeout(() => changeMood('default'), 5000);
+        }
+
+        // ========================================
+        // 辅助函数
+        // ========================================
+        function addMessage(text, type, isThinking = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}${isThinking ? ' thinking' : ''}`;
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'message-sender';
+            senderDiv.textContent = type === 'user' ? '你' : '小黑';
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = text;
+            messageDiv.appendChild(senderDiv);
+            messageDiv.appendChild(contentDiv);
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+            return messageDiv;
+        }
+
+        function updateCatStatus(text) { catStatus.textContent = text; }
+        function getRandomItem(array) { return array[Math.floor(Math.random() * array.length)]; }
+        function handleKeyPress(event) { if (event.key === 'Enter') sendMessage(); }
+
+        window.onload = function() {
+            changeMood('default');
+            setInterval(() => {
+                if (currentMood === 'default' && Math.random() > 0.7)
+                    updateCatStatus(getRandomItem(MOOD_SYSTEM.default.statuses));
+            }, 8000);
+        };
+    </script>
+</body>
+</html>
